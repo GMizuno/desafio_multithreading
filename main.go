@@ -1,15 +1,32 @@
 package main
 
 import (
+	"fmt"
 	"github.com/GMizuno/desafio_multithreading/request"
+	"time"
 )
 
 func main() {
-	Address1, _ := request.ApiCdn("24346-030")
+	c1 := make(chan string)
+	c2 := make(chan string)
+	cep := "24346030"
 
-	println(Address1)
+	go func(cep string) {
+		address, _ := request.ApiCdn(cep)
+		c1 <- address
+	}(cep)
 
-	Address2, _ := request.ApiViaCep("24346-030")
+	go func(cep string) {
+		address, _ := request.ApiViaCep(cep)
+		c2 <- address
+	}(cep)
 
-	println(Address2)
+	select {
+	case address := <-c1:
+		fmt.Println("Usando api Cdn, temos:\n", address)
+	case address := <-c2:
+		fmt.Println("Usando api ViaCep, temos:\n", address)
+	case <-time.After(time.Second * 1):
+		println("timeout")
+	}
 }
