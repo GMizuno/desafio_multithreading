@@ -31,7 +31,7 @@ type ResponseViaCep struct {
 	Siafi       string `json:"siafi"`
 }
 
-func RequesterCdn(url string) (*ResponseCdn, error) {
+func requester(url string) ([]byte, error) {
 	client := http.Client{Timeout: 10 * time.Second}
 
 	resp, err := client.Get(url)
@@ -41,58 +41,40 @@ func RequesterCdn(url string) (*ResponseCdn, error) {
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
-	var c ResponseCdn
-	if err != nil {
-		panic(err)
-	}
-	err = json.Unmarshal(body, &c)
+
 	if err != nil {
 		return nil, err
 	}
-	return &c, nil
-}
-
-func RequesterVia(url string) (*ResponseViaCep, error) {
-	client := http.Client{Timeout: 10 * time.Second}
-
-	resp, err := client.Get(url)
-	if err != nil {
-		panic(err)
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	var c ResponseViaCep
-	if err != nil {
-		panic(err)
-	}
-	err = json.Unmarshal(body, &c)
-	if err != nil {
-		return nil, err
-	}
-	return &c, nil
+	return body, nil
 }
 
 func ApiCdn(cep string) (string, error) {
 
 	url := "https://cdn.apicep.com/file/apicep/" + cep + ".json"
-	cepResponse, err := RequesterCdn(url)
+	body, err := requester(url)
+	var c ResponseCdn
+	err = json.Unmarshal(body, &c)
 	if err != nil {
 		return "", err
 	}
 
-	return cepResponse.Address, nil
+	return c.Address, nil
 
 }
 
 func ApiViaCep(cep string) (string, error) {
 
 	url := "http://viacep.com.br/ws/" + cep + "/json/"
-	cepResponse, err := RequesterVia(url)
+	body, err := requester(url)
+	if err != nil {
+		panic(err)
+	}
+
+	var c ResponseViaCep
+	err = json.Unmarshal(body, &c)
 	if err != nil {
 		return "", err
 	}
 
-	return cepResponse.Logradouro, nil
-
+	return c.Logradouro, nil
 }
